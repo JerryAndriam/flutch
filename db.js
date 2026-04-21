@@ -48,12 +48,34 @@ function buildSslConfig() {
   return { rejectUnauthorized: false };
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: buildSslConfig(),
-  max: 20,
-  idleTimeoutMillis: 30000,
-});
+let poolConfig = { max: 20, idleTimeoutMillis: 30000 };
+if (process.env.DATABASE_URL) {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    poolConfig = {
+      ...poolConfig,
+      host: url.hostname,
+      port: url.port ? parseInt(url.port) : 5432,
+      database: url.pathname.slice(1),
+      user: url.username,
+      password: url.password,
+    };
+  } catch (_) {
+    poolConfig.connectionString = process.env.DATABASE_URL;
+  }
+} else {
+  poolConfig = {
+    ...poolConfig,
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME || 'flutch',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  };
+}
+poolConfig.ssl = buildSslConfig();
+
+const pool = new Pool(poolConfig);
 
 async function initSchema() {
   await pool.query(`
