@@ -234,6 +234,9 @@ async function initSchema() {
     "ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'email'",
     "ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS brevo_message_id TEXT",
     "ALTER TABLE biens ADD COLUMN IF NOT EXISTS lien_drive TEXT",
+    "ALTER TABLE biens ADD COLUMN IF NOT EXISTS dpe VARCHAR(1)",
+    "ALTER TABLE acquereur_criteria ADD COLUMN IF NOT EXISTS dpe_min VARCHAR(1)",
+    "ALTER TABLE acquereur_criteria ADD COLUMN IF NOT EXISTS dpe_max VARCHAR(1)",
   ];
   for (const sql of migrations) {
     try { await pool.query(sql); } catch (_) {}
@@ -384,6 +387,16 @@ async function log(userId, action, entityType, entityId, details) {
   );
 }
 
+const DPE_SCORE = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7 };
+
+function isDpeCompatible(acqDpeMin, acqDpeMax, bienDpe) {
+  const bienScore = bienDpe ? DPE_SCORE[bienDpe.toUpperCase()] : null;
+  if (!bienScore) return true;
+  const minScore = acqDpeMin ? DPE_SCORE[acqDpeMin.toUpperCase()] : 1;
+  const maxScore = acqDpeMax ? DPE_SCORE[acqDpeMax.toUpperCase()] : 7;
+  return bienScore >= minScore && bienScore <= maxScore;
+}
+
 async function matchAcquereurToBiens(acquereurId, hideelegation = true) {
   const { rows: critRows } = await pool.query('SELECT * FROM acquereur_criteria WHERE acquereur_id = $1', [acquereurId]);
   const criteria = critRows[0] || null;
@@ -432,6 +445,13 @@ async function matchAcquereurToBiens(acquereurId, hideelegation = true) {
         }
       }
     }
+    if (criteria.dpe_min || criteria.dpe_max) {
+      criteriaConditions.push(`(
+        b.dpe IS NULL OR
+        (b.dpe IS NOT NULL AND $${paramIdx++} >= COALESCE(criteria.dpe_min, 'A') AND b.dpe <= COALESCE(criteria.dpe_max, 'G'))
+      )`);
+      criteriaParams.push(criteria.dpe_min || 'A', criteria.dpe_max || 'G');
+    }
   }
 
   const critWhere = criteriaConditions.length > 0 ? criteriaConditions.join(' AND ') : '1=1';
@@ -464,7 +484,7 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
     SELECT a.*,
            c.budget_min, c.budget_max, c.rentabilite_min,
            c.occupation_status as crit_occ, c.occupation_ids as crit_occ_ids,
-           c.secteurs,
+           c.secteurs, c.dpe_min, c.dpe_max,
            t.id as todo_id,
            t.statut as statut_todo
     FROM acquereurs a
@@ -507,6 +527,9 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
           const match = expanded.some(s => cpBien.startsWith(s));
           if (!match && cpBien) return false;
         }
+      }
+      if (a.dpe_min || a.dpe_max) {
+        if (!isDpeCompatible(a.dpe_min, a.dpe_max, bien.dpe)) return false;
       }
       return true;
     } catch (_) { return false; }
