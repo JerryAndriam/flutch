@@ -7,11 +7,11 @@ Comme comportement, Le script actuel contacte les acquéreurs dormants via l’A
 Créer un fichier `worker/.env` avec:
 
 ```env
-FLUTCH_API_URL=http://localhost:3000
-FLUTCH_EMAIL=agent-test@example.com
-FLUTCH_PASSWORD=ton_mot_de_passe
-MAX_SENDS_PER_CYCLE=20
-CYCLE_INTERVAL_MINUTES=30
+FLUTCH_API_URL=
+FLUTCH_EMAIL=
+FLUTCH_PASSWORD=
+MAX_SENDS_PER_CYCLE=
+CYCLE_INTERVAL_MINUTES=
 ```
 
 ## Lancement
