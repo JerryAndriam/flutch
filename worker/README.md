@@ -1,6 +1,6 @@
 # Worker autonome de relance
 
-Le script actuel contacte les acquéreurs dormants via l'API du Flutch. Comme comportement, Le script actuel contacte les acquéreurs dormants via l’API du Flutch. Comme comportement, il tourne entre 9h et 19h (heure de Paris), s’exécute par cycle toutes les 30 minutes (configurable), traite au maximum 20 acquéreurs par cycle avec une limite de 3 biens par acquéreur, et sauvegarde son état dans le fichier `worker/state.json`.
+Comme comportement, Le script actuel contacte les acquéreurs dormants via l’API du Flutch. il tourne entre 9h et 19h (heure de Paris), s’exécute par cycle toutes les 30 minutes (configurable), traite au maximum 20 acquéreurs par cycle avec une limite de 3 biens par acquéreur, et sauvegarde son état dans le fichier `worker/state.json`.
 
 ## Configuration
 
