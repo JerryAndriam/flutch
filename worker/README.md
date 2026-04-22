@@ -1,0 +1,21 @@
+# Worker autonome de relance
+
+Le script actuel contacte les acquéreurs dormants via l'API du Flutch. Comme comportement, Le script actuel contacte les acquéreurs dormants via l’API du Flutch. Comme comportement, il tourne entre 9h et 19h (heure de Paris), s’exécute par cycle toutes les 30 minutes (configurable), traite au maximum 20 acquéreurs par cycle avec une limite de 3 biens par acquéreur, et sauvegarde son état dans le fichier `worker/state.json`.
+
+## Configuration
+
+Créer un fichier `worker/.env` avec:
+
+```env
+FLUTCH_API_URL=http://localhost:3000
+FLUTCH_EMAIL=agent-test@example.com
+FLUTCH_PASSWORD=ton_mot_de_passe
+MAX_SENDS_PER_CYCLE=20
+CYCLE_INTERVAL_MINUTES=30
+```
+
+## Lancement
+
+```bash
+npm run worker
+```
